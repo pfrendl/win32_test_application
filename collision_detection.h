@@ -46,8 +46,8 @@ void insertion_sort(IndexedValue *ivs, int iv_count);
 IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory);
 
 
-constexpr uint64_t FNV_prime = 0x100000001b3;
-uint64_t seed_hash(char* key, int key_size, int key_count, uint64_t seed);
+constexpr uint64_t FNV_prime = 0x00000100000001b3;
+uint64_t seed_hash(IndexPair *pair, int key_count, uint64_t seed);
 
 
 HashMap hash_index_pair_array(IndexPairArray *idx_pairs, Memory *memory);

@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "collision_detection.h"
 
 
@@ -21,9 +23,7 @@ IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
     bool *open_dict = (bool *)m_alloc(memory, sizeof(bool) * bbox_count);
     int *open_list = (int *)m_alloc(memory, sizeof(int) * bbox_count);
     int open_count = 0;
-    for(int i = 0; i < bbox_count; ++i) {
-        open_dict[i] = false;
-    }
+    memset(open_dict, 0, bbox_count);
     
     IndexPair *inters = (IndexPair *)m_alloc(memory, 0);
     int inter_count = 0;
@@ -40,12 +40,9 @@ IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
                 int open_idx = open_list[i];
                 if(open_dict[open_idx]) {
                     m_alloc(memory, sizeof(IndexPairArray));
-                    if(open_idx < idx) {
-                        inters[inter_count++] = {open_idx, idx};
-                    }
-                    else {
-                        inters[inter_count++] = {idx, open_idx};
-                    }
+                    int left = open_idx < idx;
+                    int right = 1 - left;
+                    inters[inter_count++] = {left * open_idx + right * idx, left * idx + right * open_idx};
                     open_list[i - shift_back] = open_idx;
                 }
                 else {
@@ -62,14 +59,9 @@ IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
 }
 
 
-uint64_t seed_hash(char* key, int key_size, int key_count, uint64_t seed) {
-    if(seed == 0) {
-        seed = 0xcbf29ce484222325;
-    }
-	const char* end = key + key_size;
-	while(key != end) {
-		seed = (seed * FNV_prime) ^ *key++;
-	}
+uint64_t seed_hash(IndexPair *pair, int key_count, uint64_t seed) {
+    seed = (seed * FNV_prime) ^ pair->a;
+    seed = (seed * FNV_prime) ^ pair->b;
 	return seed % key_count;
 }
 
@@ -84,9 +76,9 @@ HashMap hash_index_pair_array(IndexPairArray *idx_pairs, Memory *memory) {
     }
     for(int i = 0; i < idx_pairs->pair_count; ++i) {
         hash_pairs[table_ptr] = idx_pairs->pairs[i];
-        uint64_t seed = 0;
+        uint64_t seed = 1;
         do {
-            uint64_t idx = seed_hash((char *)(idx_pairs->pairs + i), sizeof(IndexPair), hash_table_size, seed);
+            uint64_t idx = seed_hash(idx_pairs->pairs + i, hash_table_size, seed);
             if(hash_indices[idx] == -1) {
                 hash_indices[idx] = table_ptr++;
                 break;
@@ -102,9 +94,9 @@ bool in_hash_map(IndexPair *pair, HashMap *hash_map) {
     if(hash_map->pair_count == 0) {
         return false;
     }
-    uint64_t seed = 0;
+    uint64_t seed = 1;
     do {
-        uint64_t idx = seed_hash((char *)pair, sizeof(IndexPair), hash_map->size, seed);
+        uint64_t idx = seed_hash(pair, hash_map->size, seed);
         int pair_idx = hash_map->indices[idx];
         if(pair_idx == -1) {
             return false;
