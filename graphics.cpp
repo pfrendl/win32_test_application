@@ -1,9 +1,11 @@
+#include <stdio.h>
+
 #include "graphics.h"
 #include "math.h"
 
 
-inline int clip(int value, int low, int high) {
-    int low_clipped = value < low ? low : value;
+inline int64_t clip(int64_t value, int64_t low, int64_t high) {
+    int64_t low_clipped = value < low ? low : value;
     return low_clipped >= high ? high - 1 : low_clipped;
 }
 
@@ -11,23 +13,23 @@ inline int clip(int value, int low, int high) {
 void render_circle(win32_offscreen_buffer *buffer, Vec2 *cam_pos, double zoom, Vec2 *origin, double radius, uint32_t color) {
     Vec2 principal_point = {buffer->width / 2.0, buffer->height / 2.0};
     
-    int diameteri = int(2 * radius * zoom);
-    int radiusi = diameteri / 2;
+    int64_t diameteri = 2 * radius * zoom;
+    int64_t radiusi = diameteri / 2;
     
-    int ox = zoom * (origin->v[0] - cam_pos->v[0]) + principal_point.v[0];
-    int oy = zoom * (origin->v[1] - cam_pos->v[1]) + principal_point.v[1];
+    int64_t ox = zoom * (origin->v[0] - cam_pos->v[0]) + principal_point.v[0];
+    int64_t oy = zoom * (origin->v[1] - cam_pos->v[1]) + principal_point.v[1];
     
-    int min_i = clip(oy - radiusi, 0, buffer->height) - oy;
-    int max_i = clip(oy + radiusi + (diameteri > 0), 0, buffer->height) - oy;
+    int64_t min_i = clip(oy - radiusi, 0, buffer->height) - oy;
+    int64_t max_i = clip(oy + radiusi + (diameteri > 0), 0, buffer->height) - oy;
     
-    for(int i = min_i; i < max_i; ++i) {
+    for(int64_t i = min_i; i < max_i; ++i) {
         double sqrt_val = sqrt(radiusi * radiusi - i * i);
         
-        int min_j = clip(int(-sqrt_val) + ox, 0, buffer->width);
-        int max_j = clip(int(sqrt_val) + ox + 1, 0, buffer->width);
+        int64_t min_j = clip(int64_t(-sqrt_val) + ox, 0, buffer->width);
+        int64_t max_j = clip(int64_t(sqrt_val) + ox + 1, 0, buffer->width);
         uint32_t *row = (uint32_t *)(buffer->memory) + (oy + i) * buffer->width;
         
-        for(int j = min_j; j < max_j; ++j) {
+        for(int64_t j = min_j; j < max_j; ++j) {
             row[j] = color;
         }
     }

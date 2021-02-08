@@ -30,6 +30,6 @@ struct win32_input_data {
     bool left_button_down;
     int mouse_x;
     int mouse_y;
-    float zoom = 400;
+    double zoom = 400;
     Vec2 cam_pos = {0, 0};
 };
