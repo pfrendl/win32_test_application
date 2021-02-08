@@ -1,5 +1,4 @@
 #include "collision_detection.h"
-#include <stdio.h>
 
 
 void insertion_sort(IndexedValue *ivs, int iv_count) {
@@ -17,29 +16,14 @@ void insertion_sort(IndexedValue *ivs, int iv_count) {
     }
 }
 
-
-int sorted_search(int elem, int *array, int len) {
-    int start = 0;
-    int end = len;
-    int middle = (end + start) / 2;
-    while(start < end) {
-        int middle_elem = array[middle];
-        if(middle_elem > elem) {
-            end = middle;
-        }
-        else if(middle_elem < elem) {
-            start = middle + 1;
-        }
-        else return middle;
-        middle = (end + start) / 2;
-    }
-    return middle;
-}
-
  
 IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
-    int *open = (int *)m_alloc(memory, sizeof(int) * bbox_count);
+    bool *open_dict = (bool *)m_alloc(memory, sizeof(bool) * bbox_count);
+    int *open_list = (int *)m_alloc(memory, sizeof(int) * bbox_count);
     int open_count = 0;
+    for(int i = 0; i < bbox_count; ++i) {
+        open_dict[i] = false;
+    }
     
     IndexPair *inters = (IndexPair *)m_alloc(memory, 0);
     int inter_count = 0;
@@ -47,29 +31,30 @@ IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
     int iv_count = 2 * bbox_count;
     for(int i = 0; i < iv_count; ++i) {
         int idx = ivs[i].index;
-        int found = sorted_search(idx, open, open_count);
-        if(found < open_count && open[found] == idx) {
-            for(int i = found; i < open_count; ++i) {
-                open[i] = open[i + 1];
-            }
-            --open_count;
+        if(open_dict[idx]) {
+            open_dict[idx] = false;
         }
         else {
+            int shift_back = 0;
             for(int i = 0; i < open_count; ++i) {
-                m_alloc(memory, sizeof(IndexPairArray));
-                int open_idx = open[i];
-                if(open_idx < idx) {
-                    inters[inter_count++] = {open_idx, idx};
+                int open_idx = open_list[i];
+                if(open_dict[open_idx]) {
+                    m_alloc(memory, sizeof(IndexPairArray));
+                    if(open_idx < idx) {
+                        inters[inter_count++] = {open_idx, idx};
+                    }
+                    else {
+                        inters[inter_count++] = {idx, open_idx};
+                    }
+                    open_list[i - shift_back] = open_idx;
                 }
                 else {
-                    inters[inter_count++] = {idx, open_idx};
+                    ++shift_back;
                 }
             }
-            for(int j = open_count; j > found; --j) {
-                open[j] = open[j - 1];
-            }
-            open[found] = idx;
-            ++open_count;
+            open_count -= shift_back - 1;
+            open_list[open_count - 1] = idx;
+            open_dict[idx] = true;
         }
     }
     
@@ -78,6 +63,9 @@ IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
 
 
 uint64_t seed_hash(char* key, int key_size, int key_count, uint64_t seed) {
+    if(seed == 0) {
+        seed = 0xcbf29ce484222325;
+    }
 	const char* end = key + key_size;
 	while(key != end) {
 		seed = (seed * FNV_prime) ^ *key++;
@@ -96,7 +84,7 @@ HashMap hash_index_pair_array(IndexPairArray *idx_pairs, Memory *memory) {
     }
     for(int i = 0; i < idx_pairs->pair_count; ++i) {
         hash_pairs[table_ptr] = idx_pairs->pairs[i];
-        uint64_t seed = 1;
+        uint64_t seed = 0;
         do {
             uint64_t idx = seed_hash((char *)(idx_pairs->pairs + i), sizeof(IndexPair), hash_table_size, seed);
             if(hash_indices[idx] == -1) {
@@ -114,7 +102,7 @@ bool in_hash_map(IndexPair *pair, HashMap *hash_map) {
     if(hash_map->pair_count == 0) {
         return false;
     }
-    uint64_t seed = 1;
+    uint64_t seed = 0;
     do {
         uint64_t idx = seed_hash((char *)pair, sizeof(IndexPair), hash_map->size, seed);
         int pair_idx = hash_map->indices[idx];
@@ -139,11 +127,6 @@ IndexPairArray sweep_and_prune(
     int bbox_count,
     Memory *memory
 ) {
-    char buff[128];
-    
-    //sprintf(buff, "memory->ptr A: %zd\n", memory->ptr);
-    //OutputDebugStringA(buff);
-    
     int iv_count = 2 * bbox_count;
     IndexedValue *xs = (IndexedValue *)m_alloc(memory, sizeof(IndexedValue) * iv_count);
     IndexedValue *ys = (IndexedValue *)m_alloc(memory, sizeof(IndexedValue) * iv_count);
@@ -158,8 +141,10 @@ IndexPairArray sweep_and_prune(
         x_bound_idx_pair->a = -1;
         y_bound_idx_pair->a = -1;
     }
+    
     insertion_sort(xs, iv_count);
     insertion_sort(ys, iv_count);
+    
     for(int i = 0; i < iv_count; ++i) {
         int idx = xs[i].index;
         if(x_bound_idx_pairs[idx].a  == -1) {
@@ -179,14 +164,7 @@ IndexPairArray sweep_and_prune(
         }
     }
     
-    //sprintf(buff, "memory->ptr B: %zd\n", memory->ptr);
-    //OutputDebugStringA(buff);
-    
     IndexPairArray x_inters = inter_axis(xs, bbox_count, memory);
-    
-    //sprintf(buff, "memory->ptr BB: %zd\n", memory->ptr);
-    //OutputDebugStringA(buff);
-    
     IndexPairArray y_inters = inter_axis(ys, bbox_count, memory);
     
     IndexPairArray *a_inters;
@@ -200,9 +178,6 @@ IndexPairArray sweep_and_prune(
         b_inters = &x_inters;
     }
     
-    //sprintf(buff, "memory->ptr C: %zd\n", memory->ptr);
-    //OutputDebugStringA(buff);
-    
     HashMap a_inters_hash_map = hash_index_pair_array(a_inters, memory);
     a_inters->pair_count = 0;
     for(int i = 0; i < b_inters->pair_count; ++i) {
@@ -211,9 +186,6 @@ IndexPairArray sweep_and_prune(
             a_inters->pairs[a_inters->pair_count++] = *idx_pair;
         }
     }
-    
-    //sprintf(buff, "memory->ptr D: %zd\n", memory->ptr);
-    //OutputDebugStringA(buff);
     
     return *a_inters;
 }

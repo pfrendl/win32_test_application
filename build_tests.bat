@@ -2,5 +2,5 @@
 
 if not exist .\build mkdir .\build
 pushd .\build
-nvcc -o test.exe ..\test.cpp ..\datatypes.cpp ..\collision_detection.cpp ..\random.cpp user32.lib gdi32.lib
+g++ -o test.exe ..\test.cpp ..\datatypes.cpp ..\collision_detection.cpp ..\random.cpp -luser32 -lgdi32
 popd

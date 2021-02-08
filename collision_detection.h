@@ -42,9 +42,6 @@ struct HashMap {
 };
 
 void insertion_sort(IndexedValue *ivs, int iv_count);
-
-int sorted_search(int elem, int *array, int len);
-
  
 IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory);
 

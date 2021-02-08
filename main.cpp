@@ -179,8 +179,6 @@ WinMain(
 ) {
     WNDCLASSA window_class = {};
 
-    win32_resize_DIB_section(&global_back_buffer, 1440, 900);
-
     window_class.style = CS_HREDRAW | CS_VREDRAW;
     window_class.lpfnWndProc = win32_main_window_callback;
     window_class.hInstance = instance;
@@ -188,15 +186,18 @@ WinMain(
     window_class.hCursor = LoadCursorA(NULL, IDC_ARROW);
     window_class.lpszClassName = "RaytracerWindowClass";
     
-    Memory memory = m_create(1024 * 1024 * 10);
+    Memory memory = m_create(1024 * 1024 * 200);
+    
+    char buff[128];
     
     time_t t;
     srand((unsigned)time(&t));
-    constexpr int circle_count = 1000;
+    
+    constexpr int circle_count = 30000;
     Vec2 positions[circle_count];
     double radii[circle_count];
     for(int i = 0; i < circle_count; ++i) {
-        positions[i] = random_normal({0, 0}, 0.2);
+        positions[i] = random_normal({0, 0}, 10.0);
         radii[i] = random_uniform(0.003, 0.01);
     }
     IndexPair x_bound_idx_pairs[circle_count];
@@ -215,13 +216,16 @@ WinMain(
                 WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
-                global_back_buffer.width,
-                global_back_buffer.height,
+                1440,
+                900,
                 0,
                 0,
                 instance,
                 0);
         if(window) {
+            win32_window_dimensions dimensions = win32_get_window_dimensions(window);
+            win32_resize_DIB_section(&global_back_buffer, dimensions.width, dimensions.height);
+            
             global_running = true;
             while (global_running)
             {
@@ -241,8 +245,6 @@ WinMain(
                     bboxes[i] = {{origin->v[0] - radius, origin->v[1] - radius}, {origin->v[0] + radius, origin->v[1] + radius}};
                 }
                 
-                clock_t start = clock();
-                
                 IndexPairArray collisions = sweep_and_prune(
                     bboxes,
                     x_bound_idx_pairs,
@@ -251,14 +253,11 @@ WinMain(
                     &memory
                 );
                 
-                clock_t end = clock();
-                double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-                char buff[128];
-                sprintf(buff, "time: %f\n", cpu_time_used);
-                OutputDebugStringA(buff);
-                
                 render_scene(&global_back_buffer, &(global_input_data.cam_pos),
                                     global_input_data.zoom, positions, radii, circle_count, &collisions, &memory);
+                
+                sprintf(buff, "MB mem used: %f\n", (double)memory.ptr / 1024 / 1024);
+                OutputDebugStringA(buff);
 
                 m_free(&memory);
 

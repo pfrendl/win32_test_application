@@ -29,43 +29,16 @@ int main() {
         }
         
         clock_t start = clock();
+        
         insertion_sort(inputs, input_count);
+        
         clock_t end = clock();
         double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-        printf("time: %f\n", cpu_time_used);
+        printf("insertion_sort time: %f\n", cpu_time_used);
         
         for(int i = 0; i < input_count - 1; ++i) {
             assert(inputs[i].value <= inputs[i + 1].value);
         }
-    }
-    
-    // sorted_search
-    {
-        int arr[] = {0, 2, 5, 7, 11, 15};
-        int arr_len = sizeof(arr) / sizeof(int);
-        int result = sorted_search(3, arr, arr_len);
-        assert(result == 2);
-    }
-    
-    {
-        int arr[] = {0, 2, 5, 7, 11, 15};
-        int arr_len = sizeof(arr) / sizeof(int);
-        int result = sorted_search(5, arr, arr_len);
-        assert(result == 2);
-    }
-    
-    {
-        int arr[] = {0, 2, 5, 7, 11, 15};
-        int arr_len = sizeof(arr) / sizeof(int);
-        int result = sorted_search(17, arr, arr_len);
-        assert(result == 6);
-    }
-    
-    {
-        int arr[] = {0, 2, 5, 7, 11, 15};
-        int arr_len = sizeof(arr) / sizeof(int);
-        int result = sorted_search(-1, arr, arr_len);
-        assert(result == 0);
     }
     
     // inter_axis
