@@ -181,3 +181,20 @@ IndexPairArray sweep_and_prune(
     
     return *a_inters;
 }
+
+
+void narrow_phase(Vec2 *positions, double *radii, IndexPairArray *collisions) {
+    int write_idx = 0;
+    for(int i = 0; i < collisions->pair_count; ++i) {
+        IndexPair pair = collisions->pairs[i];
+        Vec2 pos_a = positions[pair.a];
+        Vec2 pos_b = positions[pair.b];
+        double dx = pos_a.v[0] - pos_b.v[0];
+        double dy = pos_a.v[1] - pos_b.v[1];
+        double touch_dist = radii[pair.a] + radii[pair.b];
+        if(dx * dx + dy * dy < touch_dist * touch_dist) {
+            collisions->pairs[write_idx++] = pair;
+        }
+    }
+    collisions->pair_count = write_idx;
+}

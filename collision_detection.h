@@ -24,6 +24,8 @@ IndexPairArray sweep_and_prune(
     Memory *memory
 );
 
+void narrow_phase(Vec2 *positions, double *radii, IndexPairArray *collisions);
+
 
 
 

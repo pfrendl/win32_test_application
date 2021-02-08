@@ -253,6 +253,8 @@ WinMain(
                     &memory
                 );
                 
+                narrow_phase(positions, radii, &collisions);
+                
                 render_scene(&global_back_buffer, &(global_input_data.cam_pos),
                                     global_input_data.zoom, positions, radii, circle_count, &collisions, &memory);
                 
