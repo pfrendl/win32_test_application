@@ -5,6 +5,7 @@
 #include "random.h"
 #include "graphics.h"
 #include "collision_detection.h"
+#include "physics.h"
 
 #define internal static
 #define local_persist static
@@ -186,19 +187,26 @@ WinMain(
     window_class.hCursor = LoadCursorA(NULL, IDC_ARROW);
     window_class.lpszClassName = "RaytracerWindowClass";
     
-    Memory memory = m_create(1024 * 1024 * 200);
+    Memory memory = m_create(1024 * 1024 * 50);
     
     char buff[128];
     
     time_t t;
     srand((unsigned)time(&t));
     
-    constexpr int circle_count = 30000;
+    double firmness = 10.0;
+    double map_radius = 1.0;
+    double velocity_dampening = 0.75;
+    constexpr int circle_count = 1000;
     Vec2 positions[circle_count];
+    Vec2 velocities[circle_count];
     double radii[circle_count];
+    double weights[circle_count];
     for(int i = 0; i < circle_count; ++i) {
-        positions[i] = random_normal({0, 0}, 10.0);
+        positions[i] = random_normal({0, 0}, 0.2);
+        velocities[i] = {0, 0};
         radii[i] = random_uniform(0.003, 0.01);
+        weights[i] = radii[i] * radii[i] * M_PI;
     }
     IndexPair x_bound_idx_pairs[circle_count];
     IndexPair y_bound_idx_pairs[circle_count];
@@ -226,6 +234,8 @@ WinMain(
             win32_window_dimensions dimensions = win32_get_window_dimensions(window);
             win32_resize_DIB_section(&global_back_buffer, dimensions.width, dimensions.height);
             
+            clock_t last_tick = clock();
+            
             global_running = true;
             while (global_running)
             {
@@ -237,6 +247,10 @@ WinMain(
                     TranslateMessage(&message);
                     DispatchMessageA(&message);
                 }
+                
+                clock_t current_tick = clock();
+                double delta_t = ((double) (current_tick - last_tick)) / CLOCKS_PER_SEC;
+                last_tick = current_tick;
 
                 BoundingBox *bboxes = (BoundingBox *)m_alloc(&memory, sizeof(BoundingBox) * circle_count);
                 for(int i = 0; i < circle_count; ++i) {
@@ -254,6 +268,10 @@ WinMain(
                 );
                 
                 narrow_phase(positions, radii, &collisions);
+                
+                Vec2 *forces = calculate_forces(positions, radii, circle_count, &collisions, firmness, map_radius, &memory);
+                
+                apply_forces(positions, velocities, weights, forces, circle_count, velocity_dampening, delta_t);
                 
                 render_scene(&global_back_buffer, &(global_input_data.cam_pos),
                                     global_input_data.zoom, positions, radii, circle_count, &collisions, &memory);
