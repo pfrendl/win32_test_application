@@ -20,8 +20,6 @@ void render_circle(win32_offscreen_buffer *buffer, Vec2 *cam_pos, double zoom, V
     int min_i = clip(oy - radiusi, 0, buffer->height) - oy;
     int max_i = clip(oy + radiusi + (diameteri > 0), 0, buffer->height) - oy;
     
-    char buff[128];
-    
     for(int i = min_i; i < max_i; ++i) {
         double sqrt_val = sqrt(radiusi * radiusi - i * i);
         
