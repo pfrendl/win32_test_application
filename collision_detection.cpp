@@ -71,7 +71,7 @@ IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory) 
 uint64_t seed_hash(IndexPair *pair, int key_count, uint64_t seed) {
     seed = (seed * FNV_prime) ^ pair->a;
     seed = (seed * FNV_prime) ^ pair->b;
-	return seed % key_count;
+    return seed % key_count;
 }
 
 
