@@ -44,6 +44,8 @@ struct HashMap {
     int pair_count;
 };
 
+void quicksort(IndexedInterval *ivs, int low, int high);
+
 void insertion_sort(IndexedInterval *ivs, int iv_count);
  
 IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory);

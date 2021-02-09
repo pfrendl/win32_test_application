@@ -3,6 +3,35 @@
 #include "collision_detection.h"
 
 
+int partition(IndexedInterval *ivs, int low, int high) {
+    IndexedInterval pivot = ivs[low];
+    int leftwall = low;
+    
+    for(int i = low + 1; i < high; ++i) {
+        if(ivs[i].minimum < pivot.minimum) {
+            ++leftwall;
+            IndexedInterval tmp = ivs[i];
+            ivs[i] = ivs[leftwall];
+            ivs[leftwall] = tmp;
+        }
+    }
+    
+    ivs[low] = ivs[leftwall];
+    ivs[leftwall] = pivot;
+    
+    return leftwall;
+}
+
+
+void quicksort(IndexedInterval *ivs, int low, int high) {
+    if(low < high) {
+        int pivot_location = partition(ivs, low, high);
+        quicksort(ivs, low, pivot_location);
+        quicksort(ivs, pivot_location + 1, high);
+    }
+}
+
+
 void insertion_sort(IndexedInterval *ivs, int iv_count) {
     for(int i = 0; i < iv_count; ++i) {
         IndexedInterval tmp = ivs[i];
@@ -24,8 +53,8 @@ IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory) 
     int inter_count = 0;
     
     for(int i = 0; i < bbox_count; ++i) {
-        int idx_i = ivs[i].index;
         double bound = ivs[i].maximum;
+        int idx_i = ivs[i].index;
         for(int j = i + 1; j < bbox_count && ivs[j].minimum < bound; ++j) {
             m_alloc(memory, sizeof(IndexPair));
             int idx_j = ivs[j].index;

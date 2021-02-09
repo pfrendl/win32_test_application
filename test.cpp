@@ -44,6 +44,28 @@ int main() {
         }
     }
     
+    // quicksort
+    {
+        constexpr int input_count = 10000;
+        IndexedInterval inputs[input_count];
+        for(int i = 0; i < input_count; ++i) {
+            inputs[i] = {randu(), randu(), i};
+        }
+        
+        clock_t start = clock();
+        
+        quicksort(inputs, 0, input_count);
+        
+        clock_t end = clock();
+        double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        printf("quicksort time: %f\n", cpu_time_used);
+        
+        for(int i = 0; i < input_count - 1; ++i) {
+            IndexedInterval iv = inputs[i];
+            assert(iv.minimum <= inputs[i + 1].minimum);
+        }
+    }
+    
     // inter_axis
     {
         IndexedInterval ivs[] = {{0.05, 0.4, 0}, {0.08, 0.7, 2}, {0.1, 0.5, 1}, {0.6, 2.0, 5}};

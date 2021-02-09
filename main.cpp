@@ -218,6 +218,36 @@ WinMain(
         x_bound_idxs[i] = i;
         y_bound_idxs[i] = i;
     }
+    
+    BoundingBox *bboxes = (BoundingBox *)m_alloc(&memory, sizeof(BoundingBox) * circle_count);
+    for(int i = 0; i < circle_count; ++i) {
+        Vec2 *origin = positions + i;
+        double radius = radii[i];
+        bboxes[i] = {{origin->v[0] - radius, origin->v[1] - radius}, {origin->v[0] + radius, origin->v[1] + radius}};
+    }
+    
+    IndexedInterval *xs = (IndexedInterval *)m_alloc(&memory, sizeof(IndexedInterval) * circle_count);
+    IndexedInterval *ys = (IndexedInterval *)m_alloc(&memory, sizeof(IndexedInterval) * circle_count);
+    
+    for(int i = 0; i < circle_count; ++i) {
+        BoundingBox bbox = bboxes[i];
+        int x_bound_idx = x_bound_idxs[i];
+        int y_bound_idx = y_bound_idxs[i];
+        xs[x_bound_idx] = {bbox.min_point.v[0], bbox.max_point.v[0], i};
+        ys[y_bound_idx] = {bbox.min_point.v[1], bbox.max_point.v[1], i};
+    }
+    
+    quicksort(xs, 0, circle_count);
+    quicksort(ys, 0, circle_count);
+    
+    for(int i = 0; i < circle_count; ++i) {
+        x_bound_idxs[xs[i].index] = i;
+    }
+    for(int i = 0; i < circle_count; ++i) {
+        y_bound_idxs[ys[i].index] = i;
+    }
+    
+    m_free(&memory);
 
     if(RegisterClass(&window_class)) {
         HWND window =
