@@ -32,4 +32,5 @@ struct win32_input_data {
     int mouse_y;
     double zoom = 400;
     Vec2 cam_pos = {0, 0};
+    time_t last_tick;
 };

@@ -160,6 +160,10 @@ win32_main_window_callback(
                                            dimensions.width, dimensions.height);
             EndPaint(window, &paint);
         } break;
+        
+        case WM_EXITSIZEMOVE: {
+            global_input_data.last_tick = clock();
+        } break;
 
         default: {
             // OutputDebugStringA("default\n");
@@ -234,7 +238,7 @@ WinMain(
             win32_window_dimensions dimensions = win32_get_window_dimensions(window);
             win32_resize_DIB_section(&global_back_buffer, dimensions.width, dimensions.height);
             
-            clock_t last_tick = clock();
+            global_input_data.last_tick = clock();
             
             global_running = true;
             while (global_running)
@@ -249,8 +253,8 @@ WinMain(
                 }
                 
                 clock_t current_tick = clock();
-                double delta_t = ((double) (current_tick - last_tick)) / CLOCKS_PER_SEC;
-                last_tick = current_tick;
+                double delta_t = ((double) (current_tick - global_input_data.last_tick)) / CLOCKS_PER_SEC;
+                global_input_data.last_tick = current_tick;
 
                 BoundingBox *bboxes = (BoundingBox *)m_alloc(&memory, sizeof(BoundingBox) * circle_count);
                 for(int i = 0; i < circle_count; ++i) {
