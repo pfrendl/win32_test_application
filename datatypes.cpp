@@ -34,17 +34,3 @@ void *m_alloc(Memory *memory, size_t size) {
 void m_free(Memory *memory) {
     memory->ptr = 0;
 }
-
-
-Mat3x3 matmul(Mat3x3 *a, Mat3x3 *b) {
-    Mat3x3 result;
-    for(int i = 0; i < 3; ++i) {
-        for(int j = 0; j < 3; ++j) {
-            result.v[i][j] = 0;
-            for(int k = 0; k < 3; ++k) {
-                result.v[i][j] += a->v[i][k] * b->v[k][j];
-            }
-        }
-    }
-    return result;
-}

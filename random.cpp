@@ -28,5 +28,5 @@ double random_uniform(double low, double high) {
 
 Vec2 random_normal(Vec2 mean, double std) {
     Vec2 n = randn();
-    return {mean.v[0] + std * n.v[0], mean.v[1]+ std * n.v[1]};
+    return {mean.x + std * n.x, mean.y + std * n.y};
 }

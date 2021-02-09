@@ -16,8 +16,8 @@ void render_circle(win32_offscreen_buffer *buffer, Vec2 *cam_pos, double zoom, V
     int64_t diameteri = 2 * radius * zoom;
     int64_t radiusi = diameteri / 2;
     
-    int64_t ox = zoom * (origin->v[0] - cam_pos->v[0]) + principal_point.v[0];
-    int64_t oy = zoom * (origin->v[1] - cam_pos->v[1]) + principal_point.v[1];
+    int64_t ox = zoom * (origin->x - cam_pos->x) + principal_point.x;
+    int64_t oy = zoom * (origin->y - cam_pos->y) + principal_point.y;
     
     int64_t min_i = clip(oy - radiusi, 0, buffer->height) - oy;
     int64_t max_i = clip(oy + radiusi + (diameteri > 0), 0, buffer->height) - oy;

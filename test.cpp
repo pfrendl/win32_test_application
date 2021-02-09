@@ -353,7 +353,7 @@ int main() {
         for(int i = 0; i < circle_count; ++i) {
             Vec2 *origin = positions + i;
             double radius = radii[i];
-            bboxes[i] = {{origin->v[0] - radius, origin->v[1] - radius}, {origin->v[0] + radius, origin->v[1] + radius}};
+            bboxes[i] = {{origin->x - radius, origin->y - radius}, {origin->x + radius, origin->y + radius}};
         }
         
         IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, circle_count, &memory);
@@ -364,8 +364,8 @@ int main() {
             BoundingBox *bbox = bboxes + i;
             int x_bound_idx = x_bound_idxs[i];
             int y_bound_idx = y_bound_idxs[i];
-            xs[x_bound_idx] = {bbox->min_point.v[0], bbox->max_point.v[0], i};
-            ys[y_bound_idx] = {bbox->min_point.v[1], bbox->max_point.v[1], i};
+            xs[x_bound_idx] = {bbox->min_point.x, bbox->max_point.x, i};
+            ys[y_bound_idx] = {bbox->min_point.y, bbox->max_point.y, i};
         }
         
         for(int i = 0; i < circle_count - 1; ++i) {

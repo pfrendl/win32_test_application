@@ -142,8 +142,8 @@ win32_main_window_callback(
                 int dy = y - global_input_data.mouse_y;
                 global_input_data.mouse_x = x;
                 global_input_data.mouse_y = y;
-                global_input_data.cam_pos.v[0] -= dx / global_input_data.zoom;
-                global_input_data.cam_pos.v[1] -= dy / global_input_data.zoom;
+                global_input_data.cam_pos.x -= dx / global_input_data.zoom;
+                global_input_data.cam_pos.y -= dy / global_input_data.zoom;
             }
         } break;
 
@@ -223,7 +223,7 @@ WinMain(
     for(int i = 0; i < circle_count; ++i) {
         Vec2 *origin = positions + i;
         double radius = radii[i];
-        bboxes[i] = {{origin->v[0] - radius, origin->v[1] - radius}, {origin->v[0] + radius, origin->v[1] + radius}};
+        bboxes[i] = {{origin->x - radius, origin->y - radius}, {origin->x + radius, origin->y + radius}};
     }
     
     IndexedInterval *xs = (IndexedInterval *)m_alloc(&memory, sizeof(IndexedInterval) * circle_count);
@@ -233,8 +233,8 @@ WinMain(
         BoundingBox bbox = bboxes[i];
         int x_bound_idx = x_bound_idxs[i];
         int y_bound_idx = y_bound_idxs[i];
-        xs[x_bound_idx] = {bbox.min_point.v[0], bbox.max_point.v[0], i};
-        ys[y_bound_idx] = {bbox.min_point.v[1], bbox.max_point.v[1], i};
+        xs[x_bound_idx] = {bbox.min_point.x, bbox.max_point.x, i};
+        ys[y_bound_idx] = {bbox.min_point.y, bbox.max_point.y, i};
     }
     
     quicksort(xs, 0, circle_count);
@@ -290,7 +290,7 @@ WinMain(
                 for(int i = 0; i < circle_count; ++i) {
                     Vec2 *origin = positions + i;
                     double radius = radii[i];
-                    bboxes[i] = {{origin->v[0] - radius, origin->v[1] - radius}, {origin->v[0] + radius, origin->v[1] + radius}};
+                    bboxes[i] = {{origin->x - radius, origin->y - radius}, {origin->x + radius, origin->y + radius}};
                 }
                 
                 IndexPairArray collisions = sweep_and_prune(

@@ -136,8 +136,8 @@ IndexPairArray sweep_and_prune(
         BoundingBox bbox = bboxes[i];
         int x_bound_idx = x_bound_idxs[i];
         int y_bound_idx = y_bound_idxs[i];
-        xs[x_bound_idx] = {bbox.min_point.v[0], bbox.max_point.v[0], i};
-        ys[y_bound_idx] = {bbox.min_point.v[1], bbox.max_point.v[1], i};
+        xs[x_bound_idx] = {bbox.min_point.x, bbox.max_point.x, i};
+        ys[y_bound_idx] = {bbox.min_point.y, bbox.max_point.y, i};
     }
     
     insertion_sort(xs, bbox_count);
@@ -183,8 +183,8 @@ void narrow_phase(Vec2 *positions, double *radii, IndexPairArray *collisions) {
         IndexPair pair = collisions->pairs[i];
         Vec2 pos_a = positions[pair.a];
         Vec2 pos_b = positions[pair.b];
-        double dx = pos_a.v[0] - pos_b.v[0];
-        double dy = pos_a.v[1] - pos_b.v[1];
+        double dx = pos_a.x - pos_b.x;
+        double dy = pos_a.y - pos_b.y;
         double touch_dist = radii[pair.a] + radii[pair.b];
         if(dx * dx + dy * dy < touch_dist * touch_dist) {
             collisions->pairs[write_idx++] = pair;

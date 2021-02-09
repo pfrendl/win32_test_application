@@ -5,17 +5,8 @@
 
 
 struct Vec2 {
-    double v[2];
-};
-
-
-struct Vec3 {
-    double v[3];
-};
-
-
-struct Mat3x3 {
-    double v[3][3];
+    double x;
+    double y;
 };
 
 
@@ -36,6 +27,3 @@ Memory m_create(size_t size);
 void m_destroy(Memory *memory);
 void *m_alloc(Memory *memory, size_t size);
 void m_free(Memory *memory);
-
-
-Mat3x3 matmul(Mat3x3 *a, Mat3x3 *b);
