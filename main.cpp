@@ -212,11 +212,11 @@ WinMain(
         radii[i] = random_uniform(0.003, 0.01);
         weights[i] = radii[i] * radii[i] * M_PI;
     }
-    IndexPair x_bound_idx_pairs[circle_count];
-    IndexPair y_bound_idx_pairs[circle_count];
+    int x_bound_idxs[circle_count];
+    int y_bound_idxs[circle_count];
     for(int i = 0; i < circle_count; ++i) {
-        x_bound_idx_pairs[i] = {2 * i, 2 * i + 1};
-        y_bound_idx_pairs[i] = {2 * i, 2 * i + 1};
+        x_bound_idxs[i] = i;
+        y_bound_idxs[i] = i;
     }
 
     if(RegisterClass(&window_class)) {
@@ -265,8 +265,8 @@ WinMain(
                 
                 IndexPairArray collisions = sweep_and_prune(
                     bboxes,
-                    x_bound_idx_pairs,
-                    y_bound_idx_pairs,
+                    x_bound_idxs,
+                    y_bound_idxs,
                     circle_count,
                     &memory
                 );

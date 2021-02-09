@@ -18,8 +18,8 @@ struct IndexPairArray {
 
 IndexPairArray sweep_and_prune(
     BoundingBox *bboxes,
-    IndexPair *x_bound_idx_pairs,
-    IndexPair *y_bound_idx_pairs,
+    int *x_bound_idxs,
+    int *y_bound_idxs,
     int bbox_count,
     Memory *memory
 );
@@ -30,8 +30,9 @@ void narrow_phase(Vec2 *positions, double *radii, IndexPairArray *collisions);
 
 
 
-struct IndexedValue {
-    double value;
+struct IndexedInterval {
+    double minimum;
+    double maximum;
     int index;
 };
 
@@ -43,9 +44,9 @@ struct HashMap {
     int pair_count;
 };
 
-void insertion_sort(IndexedValue *ivs, int iv_count);
+void insertion_sort(IndexedInterval *ivs, int iv_count);
  
-IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory);
+IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory);
 
 
 constexpr uint64_t FNV_prime = 0x00000100000001b3;

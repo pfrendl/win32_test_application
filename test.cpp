@@ -9,23 +9,25 @@
 int main() {
     // insertion_sort
     {
-        IndexedValue inputs[] = {{0.1, 0}, {0.05, 1}, {0.5, 2}, {0.4, 3}, {1.4, 4}};
-        IndexedValue expected_results[] = {inputs[1], inputs[0], inputs[3], inputs[2], inputs[4]};
-        int iv_count = sizeof(inputs) / sizeof(IndexedValue);
-        insertion_sort(inputs, iv_count);
-        for(int i = 0; i < iv_count; ++i) {
-            IndexedValue *input = inputs + i;
-            IndexedValue *expected_result = expected_results + i;
-            assert(input->value == expected_result->value && input->index == expected_result->index);
+        IndexedInterval inputs[] = {{0.1, 1.1, 0}, {0.05, 0.07, 1}, {0.5, 1.0, 2}, {0.4, 0.5, 3}, {1.4, 3.0, 4}};
+        IndexedInterval expected_results[] = {inputs[1], inputs[0], inputs[3], inputs[2], inputs[4]};
+        int circle_count = sizeof(inputs) / sizeof(IndexedInterval);
+        insertion_sort(inputs, circle_count);
+        for(int i = 0; i < circle_count; ++i) {
+            IndexedInterval input = inputs[i];
+            IndexedInterval expected_result = expected_results[i];
+            assert(input.minimum == expected_result.minimum);
+            assert(input.maximum == expected_result.maximum);
+            assert(input.index == expected_result.index);
         }
     }
     
     // insertion_sort
     {
         constexpr int input_count = 10000;
-        IndexedValue inputs[input_count];
+        IndexedInterval inputs[input_count];
         for(int i = 0; i < input_count; ++i) {
-            inputs[i] = {randu(), i};
+            inputs[i] = {randu(), randu(), i};
         }
         
         clock_t start = clock();
@@ -37,16 +39,17 @@ int main() {
         printf("insertion_sort time: %f\n", cpu_time_used);
         
         for(int i = 0; i < input_count - 1; ++i) {
-            assert(inputs[i].value <= inputs[i + 1].value);
+            IndexedInterval iv = inputs[i];
+            assert(iv.minimum <= inputs[i + 1].minimum);
         }
     }
     
     // inter_axis
     {
-        IndexedValue ivs[] = {{0.05, 0}, {0.08, 2}, {0.1, 1}, {0.4, 0}, {0.5, 1}, {0.6, 5}, {0.7, 2}, {2.0, 5}};
+        IndexedInterval ivs[] = {{0.05, 0.4, 0}, {0.08, 0.7, 2}, {0.1, 0.5, 1}, {0.6, 2.0, 5}};
         IndexPair idx_pairs[] = {{0, 2}, {0, 1}, {1, 2}, {2, 5}};
         IndexPairArray expected_results = {idx_pairs, sizeof(idx_pairs) / sizeof(IndexPair)};
-        int bbox_count = sizeof(ivs) / sizeof(IndexedValue) / 2;
+        int bbox_count = sizeof(ivs) / sizeof(IndexedInterval);
         Memory memory = m_create(1024);
         IndexPairArray idx_pair_arr = inter_axis(ivs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == expected_results.pair_count);
@@ -106,11 +109,11 @@ int main() {
             {{0, 0}, {1, 1}},
             {{2, 0}, {3, 1}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}};
+        int x_bound_idxs[] = {0, 1};
+        int y_bound_idxs[] = {0, 1};
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == 0);
         m_destroy(&memory);
     }
@@ -121,11 +124,11 @@ int main() {
             {{0, 0}, {1, 1}},
             {{0, 2}, {1, 3}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}};
+        int x_bound_idxs[] = {0, 1};
+        int y_bound_idxs[] = {0, 1};
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == 0);
         m_destroy(&memory);
     }
@@ -136,13 +139,13 @@ int main() {
             {{0, 0}, {1, 1}},
             {{0, 0}, {1, 1}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}};
+        int x_bound_idxs[] = {0, 1};
+        int y_bound_idxs[] = {0, 1};
         IndexPair expected_results[] = {{0, 1}};
         int pair_count = sizeof(expected_results) / sizeof(IndexPair);
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == pair_count);
         for(int i = 0; i < idx_pair_arr.pair_count; ++i) {
             IndexPair a = idx_pair_arr.pairs[i];
@@ -158,13 +161,13 @@ int main() {
             {{0, 0}, {1, 1}},
             {{0.5, 0.5}, {1.5, 1.5}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}};
+        int x_bound_idxs[] = {0, 1};
+        int y_bound_idxs[] = {0, 1};
         IndexPair expected_results[] = {{0, 1}};
         int pair_count = sizeof(expected_results) / sizeof(IndexPair);
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == pair_count);
         for(int i = 0; i < idx_pair_arr.pair_count; ++i) {
             IndexPair a = idx_pair_arr.pairs[i];
@@ -180,13 +183,13 @@ int main() {
             {{0.5, 0.5}, {1.5, 1.5}},
             {{0, 0}, {1, 1}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}};
+        int x_bound_idxs[] = {0, 1};
+        int y_bound_idxs[] = {0, 1};
         IndexPair expected_results[] = {{0, 1}};
         int pair_count = sizeof(expected_results) / sizeof(IndexPair);
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == pair_count);
         for(int i = 0; i < idx_pair_arr.pair_count; ++i) {
             IndexPair a = idx_pair_arr.pairs[i];
@@ -203,13 +206,13 @@ int main() {
             {{0, 0}, {1, 1}},
             {{5, 0}, {5, 1}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
+        int x_bound_idxs[] = {0, 1, 2};
+        int y_bound_idxs[] = {0, 1, 2};
         IndexPair expected_results[] = {{0, 1}};
         int pair_count = sizeof(expected_results) / sizeof(IndexPair);
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == pair_count);
         for(int i = 0; i < idx_pair_arr.pair_count; ++i) {
             IndexPair a = idx_pair_arr.pairs[i];
@@ -226,13 +229,13 @@ int main() {
             {{0.7, 0.5}, {1.7, 1.5}},
             {{1.5, 0.5}, {2.5, 1.5}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
+        int x_bound_idxs[] = {0, 1, 2};
+        int y_bound_idxs[] = {0, 1, 2};
         IndexPair expected_results[] = {{0, 1}, {1, 2}};
         int pair_count = sizeof(expected_results) / sizeof(IndexPair);
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == pair_count);
         for(int i = 0; i < idx_pair_arr.pair_count; ++i) {
             IndexPair a = idx_pair_arr.pairs[i];
@@ -249,13 +252,13 @@ int main() {
             {{1.5, 0.5}, {2.5, 1.5}},
             {{0.7, 0.5}, {1.7, 1.5}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
+        int x_bound_idxs[] = {0, 1, 2};
+        int y_bound_idxs[] = {0, 1, 2};
         IndexPair expected_results[] = {{0, 2}, {1, 2}};
         int pair_count = sizeof(expected_results) / sizeof(IndexPair);
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         assert(idx_pair_arr.pair_count == pair_count);
         for(int i = 0; i < idx_pair_arr.pair_count; ++i) {
             IndexPair a = idx_pair_arr.pairs[i];
@@ -272,20 +275,16 @@ int main() {
             {{1.4, 0.6}, {2.5, 1.6}},
             {{0.7, 0.5}, {1.7, 1.5}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair expected_results_x[] = {{0, 3}, {2, 5}, {1, 4}};
-        IndexPair expected_results_y[] = {{0, 3}, {2, 5}, {1, 4}};
+        int x_bound_idxs[] = {0, 1, 2};
+        int y_bound_idxs[] = {0, 1, 2};
+        int expected_results_x[] = {0, 2, 1};
+        int expected_results_y[] = {0, 2, 1};
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         for(int i = 0; i < bbox_count; ++i) {
-            IndexPair a = x_bound_idx_pairs[i];
-            IndexPair b = y_bound_idx_pairs[i];
-            IndexPair expected_a = expected_results_x[i];
-            IndexPair expected_b = expected_results_y[i];
-            assert(a.a == expected_a.a && a.b == expected_a.b);
-            assert(b.a == expected_b.a && b.b == expected_b.b);
+            assert(x_bound_idxs[i] == expected_results_x[i]);
+            assert(y_bound_idxs[i] == expected_results_y[i]);
         }
         m_destroy(&memory);
     }
@@ -293,24 +292,21 @@ int main() {
     // sweep_and_prune
     {
         BoundingBox bboxes[] = {
-            {{0.5, 0.4}, {2.5, 1.2}},
-            {{1.4, 0.6}, {1.5, 1.6}},
-            {{0.7, 0.5}, {1.7, 1.5}},
+            {{0.5, 0.7}, {2.5, 1.2}},
+            {{1.4, 0.5}, {1.5, 1.6}},
+            {{0.7, 0.6}, {1.7, 1.5}},
         };
-        IndexPair x_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair y_bound_idx_pairs[] = {{0, 1}, {2, 3}, {4, 5}};
-        IndexPair expected_results_x[] = {{0, 5}, {2, 3}, {1, 4}};
-        IndexPair expected_results_y[] = {{0, 3}, {2, 5}, {1, 4}};
         int bbox_count = sizeof(bboxes) / sizeof(BoundingBox);
+        int x_bound_idxs[] = {0, 1, 2};
+        int y_bound_idxs[] = {0, 1, 2};
+        int expected_results_x[] = {0, 2, 1};
+        int expected_results_y[] = {2, 0, 1};
+        
         Memory memory = m_create(1024);
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, bbox_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, bbox_count, &memory);
         for(int i = 0; i < bbox_count; ++i) {
-            IndexPair a = x_bound_idx_pairs[i];
-            IndexPair b = y_bound_idx_pairs[i];
-            IndexPair expected_a = expected_results_x[i];
-            IndexPair expected_b = expected_results_y[i];
-            assert(a.a == expected_a.a && a.b == expected_a.b);
-            assert(b.a == expected_b.a && b.b == expected_b.b);
+            assert(x_bound_idxs[i] == expected_results_x[i]);
+            assert(y_bound_idxs[i] == expected_results_y[i]);
         }
         m_destroy(&memory);
     }
@@ -323,11 +319,11 @@ int main() {
             positions[i] = random_normal({0, 0}, 0.2);
             radii[i] = random_uniform(0.003, 0.01);
         }
-        IndexPair x_bound_idx_pairs[circle_count];
-        IndexPair y_bound_idx_pairs[circle_count];
+        int x_bound_idxs[circle_count];
+        int y_bound_idxs[circle_count];
         for(int i = 0; i < circle_count; ++i) {
-            x_bound_idx_pairs[i] = {2 * i, 2 * i + 1};
-            y_bound_idx_pairs[i] = {2 * i, 2 * i + 1};
+            x_bound_idxs[i] = i;
+            y_bound_idxs[i] = i;
         }
         
         Memory memory = m_create(1024 * 1024 * 10);
@@ -338,24 +334,21 @@ int main() {
             bboxes[i] = {{origin->v[0] - radius, origin->v[1] - radius}, {origin->v[0] + radius, origin->v[1] + radius}};
         }
         
-        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idx_pairs, y_bound_idx_pairs, circle_count, &memory);
+        IndexPairArray idx_pair_arr = sweep_and_prune(bboxes, x_bound_idxs, y_bound_idxs, circle_count, &memory);
         
-        int iv_count = 2 * circle_count;
-        IndexedValue *xs = (IndexedValue *)m_alloc(&memory, sizeof(IndexedValue) * iv_count);
-        IndexedValue *ys = (IndexedValue *)m_alloc(&memory, sizeof(IndexedValue) * iv_count);
+        IndexedInterval *xs = (IndexedInterval *)m_alloc(&memory, sizeof(IndexedInterval) * circle_count);
+        IndexedInterval *ys = (IndexedInterval *)m_alloc(&memory, sizeof(IndexedInterval) * circle_count);
         for(int i = 0; i < circle_count; ++i) {
             BoundingBox *bbox = bboxes + i;
-            IndexPair *x_bound_idx_pair = x_bound_idx_pairs + i;
-            IndexPair *y_bound_idx_pair = y_bound_idx_pairs + i;
-            xs[x_bound_idx_pair->a] = {bbox->min_point.v[0], i};
-            xs[x_bound_idx_pair->b] = {bbox->max_point.v[0], i};
-            ys[y_bound_idx_pair->a] = {bbox->min_point.v[1], i};
-            ys[y_bound_idx_pair->b] = {bbox->max_point.v[1], i};
+            int x_bound_idx = x_bound_idxs[i];
+            int y_bound_idx = y_bound_idxs[i];
+            xs[x_bound_idx] = {bbox->min_point.v[0], bbox->max_point.v[0], i};
+            ys[y_bound_idx] = {bbox->min_point.v[1], bbox->max_point.v[1], i};
         }
         
-        for(int i = 0; i < iv_count - 1; ++i) {
-            assert(xs[i].value < xs[i + 1].value);
-            assert(ys[i].value < ys[i + 1].value);
+        for(int i = 0; i < circle_count - 1; ++i) {
+            assert(xs[i].minimum < xs[i + 1].minimum);
+            assert(ys[i].minimum < ys[i + 1].minimum);
         }
         m_destroy(&memory);
     }

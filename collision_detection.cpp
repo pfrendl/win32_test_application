@@ -3,13 +3,13 @@
 #include "collision_detection.h"
 
 
-void insertion_sort(IndexedValue *ivs, int iv_count) {
+void insertion_sort(IndexedInterval *ivs, int iv_count) {
     for(int i = 0; i < iv_count; ++i) {
-        IndexedValue tmp = ivs[i];
+        IndexedInterval tmp = ivs[i];
         int j = i;
         
-        while(j > 0 && ivs[j - 1].value > tmp.value) {
-            IndexedValue read_first = ivs[j - 1];
+        while(j > 0 && ivs[j - 1].minimum > tmp.minimum) {
+            IndexedInterval read_first = ivs[j - 1];
             ivs[j] = read_first;
             --j;
         }
@@ -19,39 +19,19 @@ void insertion_sort(IndexedValue *ivs, int iv_count) {
 }
 
  
-IndexPairArray inter_axis(IndexedValue *ivs, int bbox_count, Memory *memory) {
-    bool *open_dict = (bool *)m_alloc(memory, sizeof(bool) * bbox_count);
-    int *open_list = (int *)m_alloc(memory, sizeof(int) * bbox_count);
-    int open_count = 0;
-    memset(open_dict, 0, bbox_count);
-    
+IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory) {
     IndexPair *inters = (IndexPair *)m_alloc(memory, 0);
     int inter_count = 0;
     
-    int iv_count = 2 * bbox_count;
-    for(int i = 0; i < iv_count; ++i) {
-        int idx = ivs[i].index;
-        if(open_dict[idx]) {
-            open_dict[idx] = false;
-        }
-        else {
-            int shift_back = 0;
-            for(int i = 0; i < open_count; ++i) {
-                int open_idx = open_list[i];
-                if(open_dict[open_idx]) {
-                    m_alloc(memory, sizeof(IndexPairArray));
-                    int left = open_idx < idx;
-                    int right = 1 - left;
-                    inters[inter_count++] = {left * open_idx + right * idx, left * idx + right * open_idx};
-                    open_list[i - shift_back] = open_idx;
-                }
-                else {
-                    ++shift_back;
-                }
-            }
-            open_count -= shift_back - 1;
-            open_list[open_count - 1] = idx;
-            open_dict[idx] = true;
+    for(int i = 0; i < bbox_count; ++i) {
+        int idx_i = ivs[i].index;
+        double bound = ivs[i].maximum;
+        for(int j = i + 1; j < bbox_count && ivs[j].minimum < bound; ++j) {
+            m_alloc(memory, sizeof(IndexPair));
+            int idx_j = ivs[j].index;
+            int left = idx_i < idx_j;
+            int right = 1 - left;
+            inters[inter_count++] = {left * idx_i + right * idx_j, left * idx_j + right * idx_i};
         }
     }
     
@@ -114,46 +94,31 @@ bool in_hash_map(IndexPair *pair, HashMap *hash_map) {
 
 IndexPairArray sweep_and_prune(
     BoundingBox *bboxes,
-    IndexPair *x_bound_idx_pairs,
-    IndexPair *y_bound_idx_pairs,
+    int *x_bound_idxs,
+    int *y_bound_idxs,
     int bbox_count,
     Memory *memory
 ) {
-    int iv_count = 2 * bbox_count;
-    IndexedValue *xs = (IndexedValue *)m_alloc(memory, sizeof(IndexedValue) * iv_count);
-    IndexedValue *ys = (IndexedValue *)m_alloc(memory, sizeof(IndexedValue) * iv_count);
+    
+    IndexedInterval *xs = (IndexedInterval *)m_alloc(memory, sizeof(IndexedInterval) * bbox_count);
+    IndexedInterval *ys = (IndexedInterval *)m_alloc(memory, sizeof(IndexedInterval) * bbox_count);
+    
     for(int i = 0; i < bbox_count; ++i) {
-        BoundingBox *bbox = bboxes + i;
-        IndexPair *x_bound_idx_pair = x_bound_idx_pairs + i;
-        IndexPair *y_bound_idx_pair = y_bound_idx_pairs + i;
-        xs[x_bound_idx_pair->a] = {bbox->min_point.v[0], i};
-        xs[x_bound_idx_pair->b] = {bbox->max_point.v[0], i};
-        ys[y_bound_idx_pair->a] = {bbox->min_point.v[1], i};
-        ys[y_bound_idx_pair->b] = {bbox->max_point.v[1], i};
-        x_bound_idx_pair->a = -1;
-        y_bound_idx_pair->a = -1;
+        BoundingBox bbox = bboxes[i];
+        int x_bound_idx = x_bound_idxs[i];
+        int y_bound_idx = y_bound_idxs[i];
+        xs[x_bound_idx] = {bbox.min_point.v[0], bbox.max_point.v[0], i};
+        ys[y_bound_idx] = {bbox.min_point.v[1], bbox.max_point.v[1], i};
     }
     
-    insertion_sort(xs, iv_count);
-    insertion_sort(ys, iv_count);
+    insertion_sort(xs, bbox_count);
+    insertion_sort(ys, bbox_count);
     
-    for(int i = 0; i < iv_count; ++i) {
-        int idx = xs[i].index;
-        if(x_bound_idx_pairs[idx].a  == -1) {
-            x_bound_idx_pairs[idx].a = i;
-        }
-        else {
-            x_bound_idx_pairs[idx].b = i;
-        }
+    for(int i = 0; i < bbox_count; ++i) {
+        x_bound_idxs[xs[i].index] = i;
     }
-    for(int i = 0; i < iv_count; ++i) {
-        int idx = ys[i].index;
-        if(y_bound_idx_pairs[idx].a == -1) {
-            y_bound_idx_pairs[idx].a = i;
-        }
-        else {
-            y_bound_idx_pairs[idx].b = i;
-        }
+    for(int i = 0; i < bbox_count; ++i) {
+        y_bound_idxs[ys[i].index] = i;
     }
     
     IndexPairArray x_inters = inter_axis(xs, bbox_count, memory);
