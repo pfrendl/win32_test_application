@@ -52,16 +52,18 @@ IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory) 
     IndexPair *inters = (IndexPair *)m_alloc(memory, 0);
     int inter_count = 0;
     
+    m_alloc(memory, sizeof(IndexPair) * bbox_count);
     for(int i = 0; i < bbox_count; ++i) {
         double bound = ivs[i].maximum;
         int idx_i = ivs[i].index;
-        for(int j = i + 1; j < bbox_count && ivs[j].minimum < bound; ++j) {
-            m_alloc(memory, sizeof(IndexPair));
+        int j = i + 1;
+        for(; j < bbox_count && ivs[j].minimum < bound; ++j) {
             int idx_j = ivs[j].index;
             int left = idx_i < idx_j;
             int right = 1 - left;
             inters[inter_count++] = {left * idx_i + right * idx_j, left * idx_j + right * idx_i};
         }
+        m_alloc(memory, sizeof(IndexPair) * (j - i - 1));
     }
     
     return {inters, inter_count};
