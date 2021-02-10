@@ -38,8 +38,7 @@ void insertion_sort(IndexedInterval *ivs, int iv_count) {
         int j = i;
         
         while(j > 0 && ivs[j - 1].minimum > tmp.minimum) {
-            IndexedInterval read_first = ivs[j - 1];
-            ivs[j] = read_first;
+            ivs[j] = ivs[j - 1];
             --j;
         }
         
