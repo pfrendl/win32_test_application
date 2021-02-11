@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "collision_detection.h"
 
 
@@ -69,32 +67,36 @@ IndexPairArray inter_axis(IndexedInterval *ivs, int bbox_count, Memory *memory) 
 }
 
 
-uint64_t seed_hash(IndexPair *pair, int key_count, uint64_t seed) {
-    seed = (seed * FNV_prime) ^ pair->a;
-    seed = (seed * FNV_prime) ^ pair->b;
+inline uint64_t seed_hash(IndexPair pair, int key_count, uint64_t seed) {
+    seed = (seed * FNV_prime) ^ pair.a;
+    seed = (seed * FNV_prime) ^ pair.b;
     return seed % key_count;
 }
 
 
 HashMap hash_index_pair_array(IndexPairArray *idx_pairs, Memory *memory) {
-    int hash_table_size = 4 * idx_pairs->pair_count;
+    IndexPair *pairs = idx_pairs->pairs;
+    int pair_count = idx_pairs->pair_count; 
+    int hash_table_size = 4 * pair_count;
     int *hash_indices = (int *)m_alloc(memory, sizeof(int) * hash_table_size);
     IndexPair *hash_pairs = (IndexPair *) m_alloc(memory, sizeof(IndexPair) * hash_table_size);
     int table_ptr = 0;
     for(int i = 0; i < hash_table_size; ++i) {
         hash_indices[i] = -1;
     }
-    for(int i = 0; i < idx_pairs->pair_count; ++i) {
-        hash_pairs[table_ptr] = idx_pairs->pairs[i];
+    for(int i = 0; i < pair_count; ++i) {
+        IndexPair pair = pairs[i];
         uint64_t seed = 1;
-        do {
-            uint64_t idx = seed_hash(idx_pairs->pairs + i, hash_table_size, seed);
+        uint64_t idx;
+        while(true) {
+            idx = seed_hash(pair, hash_table_size, seed);
             if(hash_indices[idx] == -1) {
-                hash_indices[idx] = table_ptr++;
                 break;
             }
             ++seed;
-        } while(true);
+        }
+        hash_indices[idx] = table_ptr;
+        hash_pairs[table_ptr++] = pair;
     }
     return {hash_indices, hash_pairs, hash_table_size, table_ptr};
 }
@@ -106,7 +108,7 @@ bool in_hash_map(IndexPair *pair, HashMap *hash_map) {
     }
     uint64_t seed = 1;
     do {
-        uint64_t idx = seed_hash(pair, hash_map->size, seed);
+        uint64_t idx = seed_hash(*pair, hash_map->size, seed);
         int pair_idx = hash_map->indices[idx];
         if(pair_idx == -1) {
             return false;
@@ -154,27 +156,17 @@ IndexPairArray sweep_and_prune(
     IndexPairArray x_inters = inter_axis(xs, bbox_count, memory);
     IndexPairArray y_inters = inter_axis(ys, bbox_count, memory);
     
-    IndexPairArray *a_inters;
-    IndexPairArray *b_inters;
-    if(x_inters.pair_count < y_inters.pair_count) {
-        a_inters = &x_inters;
-        b_inters = &y_inters;
-    }
-    else {
-        a_inters = &y_inters;
-        b_inters = &x_inters;
-    }
+    HashMap y_inters_hash_map = hash_index_pair_array(&y_inters, memory);
     
-    HashMap a_inters_hash_map = hash_index_pair_array(a_inters, memory);
-    a_inters->pair_count = 0;
-    for(int i = 0; i < b_inters->pair_count; ++i) {
-        IndexPair *idx_pair = b_inters->pairs + i;
-        if(in_hash_map(idx_pair, &a_inters_hash_map)) {
-            a_inters->pairs[a_inters->pair_count++] = *idx_pair;
-        }
+    int pair_count = 0;
+    for(int i = 0; i < x_inters.pair_count; ++i) {
+        IndexPair *idx_pair = x_inters.pairs + i;
+        x_inters.pairs[pair_count] = *idx_pair;
+        pair_count += in_hash_map(idx_pair, &y_inters_hash_map);
     }
+    x_inters.pair_count = pair_count;
     
-    return *a_inters;
+    return x_inters;
 }
 
 
